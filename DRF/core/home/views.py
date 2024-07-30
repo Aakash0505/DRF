@@ -6,9 +6,56 @@ from .models import *
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework import status
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
 
+class LoginAPI(APIView):
+    def post(self,request):
+        data = request.data
+        serializer = LoginSerializer(data=data)
+        if not serializer.is_valid():
+            return Response({
+                'status': False,
+                'message': serializer.errors
+            },status.HTTP_400_BAD_REQUEST)
+        
+        user = authenticate(username=serializer.data['username'],password=serializer.data['password'])
+        if not user:
+            return Response({
+                'status': False,
+                'message': "Invalid Credential"
+            },status.HTTP_400_BAD_REQUEST)
 
+        token,_ = Token.objects.get_or_create(user=user)
+
+        return Response({
+            'status': True,
+            'message': "Login Succesfull",
+            'Token': str(token)
+        },status.HTTP_201_CREATED)
+        
+
+
+class RegisterAPI(APIView):
+
+    def post(self,request):
+        data = request.data
+        serializers = RegisterSerializer(data=data)
+
+
+        if not serializers.is_valid():
+            return Response({
+                'status': False,
+                'message': serializers.errors
+            },status.HTTP_400_BAD_REQUEST)
+        serializers.save()
+
+        return Response({
+            'status': True,
+            'message': "User Created"
+        },status.HTTP_201_CREATED)
 
 class PersonAPI(APIView):
 
